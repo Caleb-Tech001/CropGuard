@@ -6,8 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Play, Square } from "lucide-react";
-import { toast } from "sonner";
-import { checkAndCreateSensorAlerts } from "@/utils/sensorAlerts";
 
 interface SensorReading {
   recorded_at: string;
@@ -21,31 +19,42 @@ const Sensors = () => {
   const { user } = useAuth();
   const [farmId, setFarmId] = useState<string | null>(null);
   const [sensorData, setSensorData] = useState<SensorReading[]>([]);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [currentValues, setCurrentValues] = useState({
     soil_moisture: 0,
     temperature: 0,
     humidity: 0,
     light_intensity: 0,
   });
+  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
     fetchFarmAndData();
   }, [user]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (isSimulating) {
-      interval = setInterval(() => {
-        simulateSensorData();
-      }, 5000);
-    }
+    if (!isSimulating) return;
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isSimulating, farmId]);
+    const interval = setInterval(() => {
+      const newReading: SensorReading = {
+        recorded_at: new Date().toISOString(),
+        soil_moisture: Math.random() * 100,
+        temperature: 15 + Math.random() * 20,
+        humidity: 40 + Math.random() * 40,
+        light_intensity: Math.random() * 1000,
+      };
+
+      setSensorData(prev => [...prev.slice(-19), newReading]);
+      setCurrentValues({
+        soil_moisture: newReading.soil_moisture,
+        temperature: newReading.temperature,
+        humidity: newReading.humidity,
+        light_intensity: newReading.light_intensity,
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isSimulating]);
+
 
   const fetchFarmAndData = async () => {
     if (!user) return;
@@ -97,46 +106,6 @@ const Sensors = () => {
     }
   };
 
-  const simulateSensorData = async () => {
-    if (!farmId) return;
-
-    const newData = {
-      soil_moisture: Number((45 + Math.random() * 20).toFixed(2)),
-      temperature: Number((20 + Math.random() * 15).toFixed(2)),
-      humidity: Number((60 + Math.random() * 20).toFixed(2)),
-      light_intensity: Number((5000 + Math.random() * 10000).toFixed(0)),
-    };
-
-    try {
-      const { data, error } = await supabase
-        .from("sensor_data")
-        .insert({
-          farm_id: farmId,
-          ...newData,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCurrentValues(newData);
-      setSensorData(prev => [...prev.slice(-19), data]);
-
-      // Check and create alerts based on sensor values
-      await checkAndCreateSensorAlerts(farmId, newData);
-    } catch (error) {
-      console.error("Error simulating data:", error);
-    }
-  };
-
-  const toggleSimulation = () => {
-    if (!isSimulating) {
-      toast.success("IoT simulation started");
-    } else {
-      toast.info("IoT simulation stopped");
-    }
-    setIsSimulating(!isSimulating);
-  };
 
   const chartData = sensorData.map(reading => ({
     time: new Date(reading.recorded_at).toLocaleTimeString(),
@@ -147,10 +116,27 @@ const Sensors = () => {
     <Layout>
       <div className="p-8">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-foreground">Sensor Data (IoT Monitor)</h1>
-          <Button onClick={toggleSimulation} variant={isSimulating ? "destructive" : "default"}>
-            {isSimulating ? <Square className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-            {isSimulating ? "Stop Simulation" : "Simulate IoT Data"}
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Sensor Data</h1>
+            <p className="text-muted-foreground mt-2">
+              {isSimulating ? "Simulated sensor data" : "Real-time data from your sensors"}
+            </p>
+          </div>
+          <Button
+            onClick={() => setIsSimulating(!isSimulating)}
+            variant={isSimulating ? "destructive" : "default"}
+          >
+            {isSimulating ? (
+              <>
+                <Square className="mr-2 h-4 w-4" />
+                Stop Simulation
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" />
+                Run Simulation
+              </>
+            )}
           </Button>
         </div>
 
