@@ -43,8 +43,8 @@
 
 **CropGuard** is a comprehensive agricultural technology platform designed to revolutionize farm management through artificial intelligence and IoT integration. Built for Nigerian farmers and agronomists, it provides real-time pest detection, environmental monitoring, and actionable insights to protect crops and maximize yields.
 
-```
 <p align="center">
+```
 ┌────────────────────────────────────────────────────────────────────┐
 │                         🌾 CropGuard  
 ├────────────────────────────────────────────────────────────────────┤
