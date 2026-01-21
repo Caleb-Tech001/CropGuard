@@ -587,7 +587,7 @@ For support, reach out through the in-app Farm Advisor or contact the developmen
 ---
 
 <p align="center">
-  <strong>Built with 💚 for Nigerian Farmers</strong>
+  <strong>Built with lovable for all Farmers</strong>
 </p>
 
 <p align="center">
